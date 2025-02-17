@@ -1,0 +1,9 @@
+{
+	"name": "ChaituADFDemo",
+	"location": "eastus2",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "2e5b1cf3-e0ad-42bd-a096-b522f01c5033",
+		"tenantId": "f6fc48f6-4986-40dc-968b-c109fae6e8f7"
+	}
+}
