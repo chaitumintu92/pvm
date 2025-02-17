@@ -1,5 +1,13 @@
 {
 	"name": "pvmadf",
+	"properties": {
+		"globalParameters": {
+			"conformed_catalog": {
+				"type": "string",
+				"value": "pvmadf"
+			}
+		}
+	},
 	"location": "eastus",
 	"identity": {
 		"type": "SystemAssigned",
