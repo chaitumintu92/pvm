@@ -1,0 +1,15 @@
+{
+	"name": "src_DeltaLake_Table_SCM",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureDatabricksDeltaLake1",
+			"type": "LinkedServiceReference"
+		},
+		"folder": {
+			"name": "Supply Chain Reporting"
+		},
+		"annotations": [],
+		"type": "AzureDatabricksDeltaLakeDataset",
+		"schema": []
+	}
+}

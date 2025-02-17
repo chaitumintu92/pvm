@@ -1,0 +1,289 @@
+{
+	"name": "Child_RawToCurated_SupplyChain",
+	"properties": {
+		"activities": [
+			{
+				"name": "Raw to Curated Notebooks",
+				"type": "DatabricksNotebook",
+				"dependsOn": [
+					{
+						"activity": "Initiate Raw to Curated Logging Master",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 3,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"notebookPath": {
+						"value": "@concat(pipeline().parameters.databricksfolder,pipeline().parameters.notebookpath)",
+						"type": "Expression"
+					},
+					"baseParameters": {
+						"BatchID": {
+							"value": "@string(activity('Initiate Raw to Curated Logging Master').output.runOutput[1])",
+							"type": "Expression"
+						},
+						"eltconfigid": {
+							"value": "@pipeline().parameters.eltconfigid",
+							"type": "Expression"
+						},
+						"TableName": {
+							"value": "@pipeline().parameters.curated_tablename",
+							"type": "Expression"
+						},
+						"Function": {
+							"value": "@pipeline().parameters.Function",
+							"type": "Expression"
+						},
+						"SourceFolder": {
+							"value": "@pipeline().parameters.sourcefolder",
+							"type": "Expression"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "AzureDatabricks1",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "Initiate Raw to Curated Logging Master",
+				"type": "DatabricksNotebook",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 3,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"notebookPath": {
+						"value": "@concat(pipeline().parameters.databricksfolder,pipeline().parameters.insertnotebookname)",
+						"type": "Expression"
+					},
+					"baseParameters": {
+						"initiatelogging": "false",
+						"eltcontrolid": {
+							"value": "@pipeline().parameters.controlid",
+							"type": "Expression"
+						},
+						"eltconfigid": {
+							"value": "@pipeline().parameters.eltconfigid",
+							"type": "Expression"
+						},
+						"status": {
+							"value": "@concat('Transformation from Raw to Curated of ',pipeline().parameters.objectname,' is Initiated')",
+							"type": "Expression"
+						},
+						"datafactoryname": {
+							"value": "@pipeline().DataFactory",
+							"type": "Expression"
+						},
+						"pipelinetriggerid": {
+							"value": "@pipeline().TriggerId",
+							"type": "Expression"
+						},
+						"pipelinetriggertype": {
+							"value": "@pipeline().TriggerType",
+							"type": "Expression"
+						},
+						"pipelinerunid": {
+							"value": "@pipeline().RunId",
+							"type": "Expression"
+						},
+						"execstartdate": {
+							"value": "@pipeline().TriggerTime",
+							"type": "Expression"
+						},
+						"targetfolder": {
+							"value": "@concat('curated',pipeline().parameters.curatedfilepath)",
+							"type": "Expression"
+						},
+						"sourcefilename": {
+							"value": "@concat('raw',pipeline().parameters.rawfilepath)",
+							"type": "Expression"
+						},
+						"parenteltexecid": {
+							"value": "@pipeline().parameters.ParentBatchID",
+							"type": "Expression"
+						},
+						"parenteltcontrolid": {
+							"value": "@pipeline().parameters.parent_controlid",
+							"type": "Expression"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "AzureDatabricks1",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "Write Child Success Logging Master",
+				"type": "DatabricksNotebook",
+				"dependsOn": [
+					{
+						"activity": "Raw to Curated Notebooks",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 3,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"notebookPath": {
+						"value": "@concat(pipeline().parameters.databricksfolder,pipeline().parameters.updatenotebookname)",
+						"type": "Expression"
+					},
+					"baseParameters": {
+						"batchid": {
+							"value": "@string(activity('Initiate Raw to Curated Logging Master').output.runOutput[1])",
+							"type": "Expression"
+						},
+						"status": {
+							"value": "@concat('Transformatiom from Raw To Curated of ',pipeline().parameters.objectname,' is Completed')",
+							"type": "Expression"
+						},
+						"execenddate": {
+							"value": "@utcNow()",
+							"type": "Expression"
+						},
+						"ulstrundate": "a",
+						"eltconfigid": {
+							"value": "@pipeline().parameters.eltconfigid",
+							"type": "Expression"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "AzureDatabricks1",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "Write Child Failed Logging",
+				"type": "DatabricksNotebook",
+				"dependsOn": [
+					{
+						"activity": "Raw to Curated Notebooks",
+						"dependencyConditions": [
+							"Failed"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 3,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"notebookPath": {
+						"value": "@concat(pipeline().parameters.databricksfolder,pipeline().parameters.updatenotebookname)",
+						"type": "Expression"
+					},
+					"baseParameters": {
+						"batchid": {
+							"value": "@string(activity('Initiate Raw to Curated Logging Master').output.runOutput[1])",
+							"type": "Expression"
+						},
+						"status": {
+							"value": "@concat('Transformatiom from Raw To Curated of ',pipeline().parameters.objectname,' is Failed')",
+							"type": "Expression"
+						},
+						"execenddate": {
+							"value": "@utcNow()",
+							"type": "Expression"
+						},
+						"ulstrundate": "u",
+						"eltconfigid": {
+							"value": "@pipeline().parameters.eltconfigid",
+							"type": "Expression"
+						},
+						"errordescription": "CDC Connector Failed"
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "AzureDatabricks1",
+					"type": "LinkedServiceReference"
+				}
+			}
+		],
+		"parameters": {
+			"databricksfolder": {
+				"type": "string"
+			},
+			"insertnotebookname": {
+				"type": "string"
+			},
+			"updatenotebookname": {
+				"type": "string"
+			},
+			"notebookpath": {
+				"type": "string"
+			},
+			"objectname": {
+				"type": "string"
+			},
+			"rawfilepath": {
+				"type": "string"
+			},
+			"curatedfilepath": {
+				"type": "string"
+			},
+			"controlid": {
+				"type": "string"
+			},
+			"ParentBatchID": {
+				"type": "string"
+			},
+			"eltconfigid": {
+				"type": "string"
+			},
+			"parent_controlid": {
+				"type": "string"
+			},
+			"project_id": {
+				"type": "string"
+			},
+			"curated_tablename": {
+				"type": "string"
+			},
+			"Function": {
+				"type": "string"
+			},
+			"SourceFolder": {
+				"type": "string"
+			}
+		},
+		"variables": {
+			"targetfolder": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "Supply Chain Reporting/Child"
+		},
+		"annotations": [],
+		"lastPublishTime": "2025-01-06T11:48:26Z"
+	}
+}

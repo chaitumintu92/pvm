@@ -1,0 +1,60 @@
+{
+	"name": "DF_Peak_S4Hana_CDS_Extractor",
+	"properties": {
+		"folder": {
+			"name": "Peak FPA"
+		},
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"linkedService": {
+						"referenceName": "SapOdp1",
+						"type": "LinkedServiceReference"
+					},
+					"name": "S4HanaSource",
+					"description": "Dynamic source connector. Values extracted from json control table file"
+				}
+			],
+			"sinks": [
+				{
+					"linkedService": {
+						"referenceName": "AzureDataLakeStorage1",
+						"type": "LinkedServiceReference"
+					},
+					"name": "adlsSinkParquet"
+				}
+			],
+			"transformations": [],
+			"scriptLines": [
+				"parameters{",
+				"     sap_cds_view_name as string (\"\"),",
+				"     sap_mount_point as string (\"\"),",
+				"     sap_target_path as string (\"\"),",
+				"     sap_cds_key_columns as string[] ([\"\"])",
+				"}",
+				"source(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     store: 'SapOdp',",
+				"     format: 'sapObject',",
+				"     staged: true,",
+				"     context: 'ABAP_CDS',",
+				"     objectName: ($sap_cds_view_name),",
+				"     readMode: 'fullAndIncrementalLoad',",
+				"     keys: ($sap_cds_key_columns),",
+				"     fixDecimalPrecision: true) ~> S4HanaSource",
+				"S4HanaSource sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'parquet',",
+				"     fileSystem: ($sap_mount_point),",
+				"     folderPath: ($sap_target_path),",
+				"     compressionCodec: 'snappy',",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> adlsSinkParquet"
+			]
+		}
+	}
+}
