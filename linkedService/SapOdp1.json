@@ -8,9 +8,10 @@
 			"clientId": "100",
 			"sncMode": false,
 			"userName": "BPINST",
+			"subscriberName": "AzurePVMOdpSubTest",
 			"server": "34.194.47.247",
 			"systemNumber": "00",
-			"encryptedCredential": "eyJDcmVkZW50aWFsSWQiOiIxMjEzZWEzNy0zNTg0LTQ0OGQtOTFlYi0yMGZhZjZkN2NmZWEiLCJWZXJzaW9uIjoiMi4wIiwiQ2xhc3NUeXBlIjoiTWljcm9zb2Z0LkRhdGFQcm94eS5Db3JlLkludGVyU2VydmljZURhdGFDb250cmFjdC5DcmVkZW50aWFsU1UwNkNZMTQifQ=="
+			"encryptedCredential": "eyJDcmVkZW50aWFsSWQiOiIzODNkNWVmYS0zYWE4LTQ0NTEtYmIyZC03ZGI1NjI1NGM0MTMiLCJWZXJzaW9uIjoiMi4wIiwiQ2xhc3NUeXBlIjoiTWljcm9zb2Z0LkRhdGFQcm94eS5Db3JlLkludGVyU2VydmljZURhdGFDb250cmFjdC5DcmVkZW50aWFsU1UwNkNZMTQifQ=="
 		},
 		"connectVia": {
 			"referenceName": "integrationRuntime1",
