@@ -1,0 +1,1260 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "pvmadf"
+		},
+		"AzureBlobStorage1_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'AzureBlobStorage1'"
+		},
+		"AzureDataLakeStorage1_accountKey": {
+			"type": "secureString",
+			"metadata": "Secure string for 'accountKey' of 'AzureDataLakeStorage1'"
+		},
+		"AzureDatabricks1_accessToken": {
+			"type": "secureString",
+			"metadata": "Secure string for 'accessToken' of 'AzureDatabricks1'"
+		},
+		"AzureDatabricksDeltaLake1_accessToken": {
+			"type": "secureString",
+			"metadata": "Secure string for 'accessToken' of 'AzureDatabricksDeltaLake1'"
+		},
+		"SapOdp1_password": {
+			"type": "secureString",
+			"metadata": "Secure string for 'password' of 'SapOdp1'"
+		},
+		"AzureDataLakeStorage1_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://pvm1d.dfs.core.windows.net/"
+		},
+		"AzureDatabricks1_properties_typeProperties_existingClusterId": {
+			"type": "string",
+			"defaultValue": "0217-085737-bljtoj77"
+		},
+		"SapOdp1_properties_typeProperties_clientId": {
+			"type": "string",
+			"defaultValue": "100"
+		},
+		"SapOdp1_properties_typeProperties_userName": {
+			"type": "string",
+			"defaultValue": "BPINST"
+		},
+		"SapOdp1_properties_typeProperties_server": {
+			"type": "string",
+			"defaultValue": "34.194.47.247"
+		},
+		"SapOdp1_properties_typeProperties_systemNumber": {
+			"type": "string",
+			"defaultValue": "00"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/Child_RawToCurated_SupplyChain')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Raw to Curated Notebooks",
+						"type": "DatabricksNotebook",
+						"dependsOn": [
+							{
+								"activity": "Initiate Raw to Curated Logging Master",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 3,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"notebookPath": {
+								"value": "@concat(pipeline().parameters.databricksfolder,pipeline().parameters.notebookpath)",
+								"type": "Expression"
+							},
+							"baseParameters": {
+								"BatchID": {
+									"value": "@string(activity('Initiate Raw to Curated Logging Master').output.runOutput[1])",
+									"type": "Expression"
+								},
+								"eltconfigid": {
+									"value": "@pipeline().parameters.eltconfigid",
+									"type": "Expression"
+								},
+								"TableName": {
+									"value": "@pipeline().parameters.curated_tablename",
+									"type": "Expression"
+								},
+								"Function": {
+									"value": "@pipeline().parameters.Function",
+									"type": "Expression"
+								},
+								"SourceFolder": {
+									"value": "@pipeline().parameters.sourcefolder",
+									"type": "Expression"
+								}
+							}
+						},
+						"linkedServiceName": {
+							"referenceName": "AzureDatabricks1",
+							"type": "LinkedServiceReference"
+						}
+					},
+					{
+						"name": "Initiate Raw to Curated Logging Master",
+						"type": "DatabricksNotebook",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 3,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"notebookPath": {
+								"value": "@concat(pipeline().parameters.databricksfolder,pipeline().parameters.insertnotebookname)",
+								"type": "Expression"
+							},
+							"baseParameters": {
+								"initiatelogging": "false",
+								"eltcontrolid": {
+									"value": "@pipeline().parameters.controlid",
+									"type": "Expression"
+								},
+								"eltconfigid": {
+									"value": "@pipeline().parameters.eltconfigid",
+									"type": "Expression"
+								},
+								"status": {
+									"value": "@concat('Transformation from Raw to Curated of ',pipeline().parameters.objectname,' is Initiated')",
+									"type": "Expression"
+								},
+								"datafactoryname": {
+									"value": "@pipeline().DataFactory",
+									"type": "Expression"
+								},
+								"pipelinetriggerid": {
+									"value": "@pipeline().TriggerId",
+									"type": "Expression"
+								},
+								"pipelinetriggertype": {
+									"value": "@pipeline().TriggerType",
+									"type": "Expression"
+								},
+								"pipelinerunid": {
+									"value": "@pipeline().RunId",
+									"type": "Expression"
+								},
+								"execstartdate": {
+									"value": "@pipeline().TriggerTime",
+									"type": "Expression"
+								},
+								"targetfolder": {
+									"value": "@concat('curated',pipeline().parameters.curatedfilepath)",
+									"type": "Expression"
+								},
+								"sourcefilename": {
+									"value": "@concat('raw',pipeline().parameters.rawfilepath)",
+									"type": "Expression"
+								},
+								"parenteltexecid": {
+									"value": "@pipeline().parameters.ParentBatchID",
+									"type": "Expression"
+								},
+								"parenteltcontrolid": {
+									"value": "@pipeline().parameters.parent_controlid",
+									"type": "Expression"
+								}
+							}
+						},
+						"linkedServiceName": {
+							"referenceName": "AzureDatabricks1",
+							"type": "LinkedServiceReference"
+						}
+					},
+					{
+						"name": "Write Child Success Logging Master",
+						"type": "DatabricksNotebook",
+						"dependsOn": [
+							{
+								"activity": "Raw to Curated Notebooks",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 3,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"notebookPath": {
+								"value": "@concat(pipeline().parameters.databricksfolder,pipeline().parameters.updatenotebookname)",
+								"type": "Expression"
+							},
+							"baseParameters": {
+								"batchid": {
+									"value": "@string(activity('Initiate Raw to Curated Logging Master').output.runOutput[1])",
+									"type": "Expression"
+								},
+								"status": {
+									"value": "@concat('Transformatiom from Raw To Curated of ',pipeline().parameters.objectname,' is Completed')",
+									"type": "Expression"
+								},
+								"execenddate": {
+									"value": "@utcNow()",
+									"type": "Expression"
+								},
+								"ulstrundate": "a",
+								"eltconfigid": {
+									"value": "@pipeline().parameters.eltconfigid",
+									"type": "Expression"
+								}
+							}
+						},
+						"linkedServiceName": {
+							"referenceName": "AzureDatabricks1",
+							"type": "LinkedServiceReference"
+						}
+					},
+					{
+						"name": "Write Child Failed Logging",
+						"type": "DatabricksNotebook",
+						"dependsOn": [
+							{
+								"activity": "Raw to Curated Notebooks",
+								"dependencyConditions": [
+									"Failed"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 3,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"notebookPath": {
+								"value": "@concat(pipeline().parameters.databricksfolder,pipeline().parameters.updatenotebookname)",
+								"type": "Expression"
+							},
+							"baseParameters": {
+								"batchid": {
+									"value": "@string(activity('Initiate Raw to Curated Logging Master').output.runOutput[1])",
+									"type": "Expression"
+								},
+								"status": {
+									"value": "@concat('Transformatiom from Raw To Curated of ',pipeline().parameters.objectname,' is Failed')",
+									"type": "Expression"
+								},
+								"execenddate": {
+									"value": "@utcNow()",
+									"type": "Expression"
+								},
+								"ulstrundate": "u",
+								"eltconfigid": {
+									"value": "@pipeline().parameters.eltconfigid",
+									"type": "Expression"
+								},
+								"errordescription": "CDC Connector Failed"
+							}
+						},
+						"linkedServiceName": {
+							"referenceName": "AzureDatabricks1",
+							"type": "LinkedServiceReference"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"parameters": {
+					"databricksfolder": {
+						"type": "string"
+					},
+					"insertnotebookname": {
+						"type": "string"
+					},
+					"updatenotebookname": {
+						"type": "string"
+					},
+					"notebookpath": {
+						"type": "string"
+					},
+					"objectname": {
+						"type": "string"
+					},
+					"rawfilepath": {
+						"type": "string"
+					},
+					"curatedfilepath": {
+						"type": "string"
+					},
+					"controlid": {
+						"type": "string"
+					},
+					"ParentBatchID": {
+						"type": "string"
+					},
+					"eltconfigid": {
+						"type": "string"
+					},
+					"parent_controlid": {
+						"type": "string"
+					},
+					"project_id": {
+						"type": "string"
+					},
+					"curated_tablename": {
+						"type": "string"
+					},
+					"Function": {
+						"type": "string"
+					},
+					"SourceFolder": {
+						"type": "string"
+					}
+				},
+				"variables": {
+					"targetfolder": {
+						"type": "String"
+					}
+				},
+				"folder": {
+					"name": "Supply Chain Reporting/Child"
+				},
+				"annotations": [],
+				"lastPublishTime": "2025-01-06T11:48:26Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureDatabricks1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Child_S4_IngestToCurated_SupplyChain')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Calculate Subdirectory Path",
+						"type": "SetVariable",
+						"dependsOn": [],
+						"policy": {
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "subdirectorypath",
+							"value": {
+								"value": "@replace(replace(replace(replace(pipeline().parameters.directory,'{YYYY}',formatDateTime(pipeline().parameters.processdate,'yyyy')),'{YYYYMM}',formatDateTime(pipeline().parameters.processdate,'yyyyMM')),'{YYYYMMDD}',formatDateTime(pipeline().parameters.processdate,'yyyyMMdd')),'{YYYYMMDDHHMMSS}',formatDateTime(pipeline().parameters.processdate,'yyyyMMddHHmmss'))",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "Initiate S4 to Raw Logging Master",
+						"type": "DatabricksNotebook",
+						"dependsOn": [
+							{
+								"activity": "Calculate Subdirectory Path",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 3,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"notebookPath": {
+								"value": "@concat(pipeline().parameters.databricksfolder,pipeline().parameters.insertnotebookname)",
+								"type": "Expression"
+							},
+							"baseParameters": {
+								"initiatelogging": "false",
+								"eltcontrolid": {
+									"value": "@pipeline().parameters.eltcontrolid",
+									"type": "Expression"
+								},
+								"eltconfigid": {
+									"value": "@pipeline().parameters.eltconfigid",
+									"type": "Expression"
+								},
+								"pipelinename": {
+									"value": "@pipeline().Pipeline",
+									"type": "Expression"
+								},
+								"status": {
+									"value": "@concat('Ingestion To Raw of ',pipeline().parameters.sourcesystem,' - ',pipeline().parameters.objectname,' is Initiated')",
+									"type": "Expression"
+								},
+								"datafactoryname": {
+									"value": "@pipeline().DataFactory",
+									"type": "Expression"
+								},
+								"pipelinetriggerid": {
+									"value": "@pipeline().TriggerId",
+									"type": "Expression"
+								},
+								"pipelinetriggertype": {
+									"value": "@pipeline().TriggerType",
+									"type": "Expression"
+								},
+								"pipelinerunid": {
+									"value": "@pipeline().RunId",
+									"type": "Expression"
+								},
+								"execstartdate": {
+									"value": "@pipeline().TriggerTime",
+									"type": "Expression"
+								},
+								"ingestionparam": {
+									"value": "@pipeline().parameters.ingestionparam",
+									"type": "Expression"
+								},
+								"targetfolder": {
+									"value": "@concat('Raw Folder:- ','\"raw',variables('subdirectorypath'))",
+									"type": "Expression"
+								},
+								"sourcefilename": {
+									"value": "@pipeline().parameters.sap_cds_view_name",
+									"type": "Expression"
+								},
+								"parenteltcontrolid": {
+									"value": "@pipeline().parameters.parent_controlid",
+									"type": "Expression"
+								}
+							}
+						},
+						"linkedServiceName": {
+							"referenceName": "AzureDatabricks1",
+							"type": "LinkedServiceReference"
+						}
+					},
+					{
+						"name": "Write Child Success Logging Master",
+						"type": "DatabricksNotebook",
+						"dependsOn": [
+							{
+								"activity": "S4 Hana Dataflow",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 3,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"notebookPath": {
+								"value": "@concat(pipeline().parameters.databricksfolder,pipeline().parameters.updatenotebookname)",
+								"type": "Expression"
+							},
+							"baseParameters": {
+								"batchid": {
+									"value": "@string(activity('Initiate S4 to Raw Logging Master').output.runOutput[1])",
+									"type": "Expression"
+								},
+								"status": {
+									"value": "@concat('Ingestion To Raw of ',pipeline().parameters.objectname,' is Completed')",
+									"type": "Expression"
+								},
+								"execenddate": {
+									"value": "@utcNow()",
+									"type": "Expression"
+								},
+								"ulstrundate": "a",
+								"eltconfigid": {
+									"value": "@pipeline().parameters.eltconfigid",
+									"type": "Expression"
+								},
+								"rowsreadatsrc": {
+									"value": "@string(activity('S4 Hana Dataflow').output.runStatus.metrics.adlsSinkParquet.rowsWritten)",
+									"type": "Expression"
+								},
+								"rowsingested": {
+									"value": "@string(activity('S4 Hana Dataflow').output.runStatus.metrics.adlsSinkParquet.sources.S4HanaSource.rowsRead)",
+									"type": "Expression"
+								}
+							}
+						},
+						"linkedServiceName": {
+							"referenceName": "AzureDatabricks1",
+							"type": "LinkedServiceReference"
+						}
+					},
+					{
+						"name": "Write Child Failed Logging",
+						"type": "DatabricksNotebook",
+						"dependsOn": [
+							{
+								"activity": "S4 Hana Dataflow",
+								"dependencyConditions": [
+									"Failed"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 3,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"notebookPath": {
+								"value": "@concat(pipeline().parameters.databricksfolder,pipeline().parameters.updatenotebookname)",
+								"type": "Expression"
+							},
+							"baseParameters": {
+								"batchid": {
+									"value": "@string(activity('Initiate S4 to Raw Logging Master').output.runOutput[1])",
+									"type": "Expression"
+								},
+								"status": {
+									"value": "@concat('Ingestion To Raw of ',pipeline().parameters.objectname,' is Failed')",
+									"type": "Expression"
+								},
+								"execenddate": {
+									"value": "@utcNow()",
+									"type": "Expression"
+								},
+								"ulstrundate": "u",
+								"eltconfigid": {
+									"value": "@pipeline().parameters.eltconfigid",
+									"type": "Expression"
+								},
+								"errordescription": "CDC Connector Failed"
+							}
+						},
+						"linkedServiceName": {
+							"referenceName": "AzureDatabricks1",
+							"type": "LinkedServiceReference"
+						}
+					},
+					{
+						"name": "Execute Invoke_S4_Notebook_RawToCurated",
+						"type": "ExecutePipeline",
+						"dependsOn": [
+							{
+								"activity": "Write Child Success Logging Master",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "Child_RawToCurated_SupplyChain",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {
+								"databricksfolder": {
+									"value": "@pipeline().parameters.databricksfolder",
+									"type": "Expression"
+								},
+								"insertnotebookname": {
+									"value": "@pipeline().parameters.insertnotebookname",
+									"type": "Expression"
+								},
+								"updatenotebookname": {
+									"value": "@pipeline().parameters.updatenotebookname",
+									"type": "Expression"
+								},
+								"notebookpath": {
+									"value": "@pipeline().parameters.rawtocuratednotebook",
+									"type": "Expression"
+								},
+								"objectname": {
+									"value": "@pipeline().parameters.objectname",
+									"type": "Expression"
+								},
+								"rawfilepath": {
+									"value": "@variables('subdirectorypath')",
+									"type": "Expression"
+								},
+								"curatedfilepath": {
+									"value": "@variables('subdirectorypath')",
+									"type": "Expression"
+								},
+								"controlid": {
+									"value": "@pipeline().parameters.eltcontrolid",
+									"type": "Expression"
+								},
+								"ParentBatchID": {
+									"value": "@string(activity('Initiate S4 to Raw Logging Master').output.runOutput[1])",
+									"type": "Expression"
+								},
+								"eltconfigid": {
+									"value": "@pipeline().parameters.eltconfigid",
+									"type": "Expression"
+								},
+								"parent_controlid": {
+									"value": "@pipeline().parameters.parent_controlid",
+									"type": "Expression"
+								},
+								"project_id": {
+									"value": "@pipeline().parameters.project_id",
+									"type": "Expression"
+								},
+								"curated_tablename": {
+									"value": "@pipeline().parameters.curated_tablename",
+									"type": "Expression"
+								},
+								"Function": {
+									"value": "@pipeline().parameters.Function",
+									"type": "Expression"
+								},
+								"SourceFolder": {
+									"value": "@variables('subdirectorypath')",
+									"type": "Expression"
+								}
+							}
+						}
+					},
+					{
+						"name": "S4 Hana Dataflow",
+						"description": "S4 Hana CDS View Extractor",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [
+							{
+								"activity": "Initiate S4 to Raw Logging Master",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 3,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "DF_Peak_S4Hana_CDS_Extractor",
+								"type": "DataFlowReference",
+								"parameters": {
+									"sap_cds_view_name": {
+										"value": "'@{pipeline().parameters.sap_cds_view_name}'",
+										"type": "Expression"
+									},
+									"sap_mount_point": {
+										"value": "'@{pipeline().parameters.basecontainer}'",
+										"type": "Expression"
+									},
+									"sap_target_path": {
+										"value": "'@{variables('subdirectorypath')}'",
+										"type": "Expression"
+									},
+									"sap_cds_key_columns": {
+										"value": "@pipeline().parameters.sap_cds_key_columns",
+										"type": "Expression"
+									}
+								},
+								"datasetParameters": {
+									"S4HanaSource": {},
+									"adlsSinkParquet": {}
+								}
+							},
+							"staging": {
+								"linkedService": {
+									"referenceName": "AzureDataLakeStorage1",
+									"type": "LinkedServiceReference"
+								},
+								"folderPath": {
+									"value": "@concat('raw/pvm_global/finance/s4hana/cdc_staging/',pipeline().parameters.datamodelname)",
+									"type": "Expression"
+								}
+							},
+							"compute": {
+								"coreCount": 16,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine",
+							"continuationSettings": {
+								"customizedCheckpointKey": {
+									"value": "@pipeline().parameters.sap_checkpoint_key",
+									"type": "Expression"
+								}
+							}
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"parameters": {
+					"processdate": {
+						"type": "string"
+					},
+					"eltcontrolid": {
+						"type": "string"
+					},
+					"eltconfigid": {
+						"type": "string"
+					},
+					"basecontainer": {
+						"type": "string"
+					},
+					"directory": {
+						"type": "string"
+					},
+					"insertnotebookname": {
+						"type": "string"
+					},
+					"updatenotebookname": {
+						"type": "string"
+					},
+					"databricksfolder": {
+						"type": "string"
+					},
+					"rawtocuratednotebook": {
+						"type": "string"
+					},
+					"objectname": {
+						"type": "string"
+					},
+					"sourcesystem": {
+						"type": "string"
+					},
+					"ingestionparam": {
+						"type": "string"
+					},
+					"sap_cds_view_name": {
+						"type": "string"
+					},
+					"sap_cds_key_columns": {
+						"type": "array"
+					},
+					"sap_checkpoint_key": {
+						"type": "string"
+					},
+					"source_file_type": {
+						"type": "string"
+					},
+					"datamodelname": {
+						"type": "string"
+					},
+					"parent_controlid": {
+						"type": "string"
+					},
+					"rawtocuratedfunction": {
+						"type": "string"
+					},
+					"project_id": {
+						"type": "string"
+					},
+					"curated_tablename": {
+						"type": "string"
+					},
+					"Function": {
+						"type": "string"
+					}
+				},
+				"variables": {
+					"subdirectorypath": {
+						"type": "String"
+					}
+				},
+				"folder": {
+					"name": "Supply Chain Reporting/Child"
+				},
+				"annotations": [],
+				"lastPublishTime": "2025-01-06T11:48:27Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureDatabricks1')]",
+				"[concat(variables('factoryId'), '/pipelines/Child_RawToCurated_SupplyChain')]",
+				"[concat(variables('factoryId'), '/dataflows/DF_Peak_S4Hana_CDS_Extractor')]",
+				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStorage1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Parent_S4Hana_IngestToCurated_SupplyChain')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Get Configuration",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 3,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureDatabricksDeltaLakeSource",
+								"query": {
+									"value": "@if(equals(pipeline().parameters.objectname,'all'),replace(replace(replace(variables('configsqlqry'),'<pipelinename>',pipeline().Pipeline),'conformed_catalog',pipeline().globalParameters.conformed_catalog),'<instance>',pipeline().parameters.instance),concat(replace(replace(replace(variables('configsqlqry'),'<pipelinename>',pipeline().Pipeline),'conformed_catalog',pipeline().globalParameters.conformed_catalog),'<instance>',pipeline().parameters.instance),' and objectname in (',pipeline().parameters.objectname,')'))",
+									"type": "Expression"
+								}
+							},
+							"dataset": {
+								"referenceName": "src_DeltaLake_Table_SCM",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"firstRowOnly": false
+						}
+					},
+					{
+						"name": "Load S4Hana Data to Curated",
+						"type": "ForEach",
+						"dependsOn": [
+							{
+								"activity": "Get Configuration",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('Get Configuration').output.value",
+								"type": "Expression"
+							},
+							"isSequential": false,
+							"batchCount": 50,
+							"activities": [
+								{
+									"name": "Call Child Pipeline Ingest S4Hana Data",
+									"type": "ExecutePipeline",
+									"dependsOn": [],
+									"policy": {
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"pipeline": {
+											"referenceName": "Child_S4_IngestToCurated_SupplyChain",
+											"type": "PipelineReference"
+										},
+										"waitOnCompletion": true,
+										"parameters": {
+											"processdate": {
+												"value": "@pipeline().parameters.processdate",
+												"type": "Expression"
+											},
+											"eltcontrolid": {
+												"value": "@item().eltcontrol_sk",
+												"type": "Expression"
+											},
+											"eltconfigid": {
+												"value": "@item().eltconfig_sk",
+												"type": "Expression"
+											},
+											"basecontainer": {
+												"value": "@item().sap_mount_point",
+												"type": "Expression"
+											},
+											"directory": {
+												"value": "@item().sourcelocation",
+												"type": "Expression"
+											},
+											"insertnotebookname": {
+												"value": "@item().insertnotebookname",
+												"type": "Expression"
+											},
+											"updatenotebookname": {
+												"value": "@item().updatenotebookname",
+												"type": "Expression"
+											},
+											"databricksfolder": {
+												"value": "@item().databricksfolder",
+												"type": "Expression"
+											},
+											"rawtocuratednotebook": {
+												"value": "@item().raw_to_curated_notebook_path",
+												"type": "Expression"
+											},
+											"objectname": {
+												"value": "@item().objectname",
+												"type": "Expression"
+											},
+											"sourcesystem": {
+												"value": "@item().sourcesystem",
+												"type": "Expression"
+											},
+											"ingestionparam": {
+												"value": "@concat('sap_cds_view_name:',item().sap_cds_view_name,',sap_cds_key_columns:',replace(item().sap_cds_key_columns,',','-'),',sap_checkpoint_key:',item().sap_checkpoint_key)",
+												"type": "Expression"
+											},
+											"sap_cds_view_name": {
+												"value": "@concat(item().sap_cds_view_name,'$E')",
+												"type": "Expression"
+											},
+											"sap_cds_key_columns": {
+												"value": "@split(item().sap_cds_key_columns,',')",
+												"type": "Expression"
+											},
+											"sap_checkpoint_key": {
+												"value": "@item().sap_checkpoint_key",
+												"type": "Expression"
+											},
+											"source_file_type": {
+												"value": "@item().source_file_type",
+												"type": "Expression"
+											},
+											"datamodelname": {
+												"value": "@item().datamodelname",
+												"type": "Expression"
+											},
+											"parent_controlid": {
+												"value": "@item().parentcontrol_sk",
+												"type": "Expression"
+											},
+											"rawtocuratedfunction": {
+												"value": "@item().rawtocuratedfunction",
+												"type": "Expression"
+											},
+											"project_id": {
+												"value": "@pipeline().parameters.project_id",
+												"type": "Expression"
+											},
+											"curated_tablename": {
+												"value": "@item().curatedtablename",
+												"type": "Expression"
+											},
+											"Function": {
+												"value": "@item().rawtocuratedfunction",
+												"type": "Expression"
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"parameters": {
+					"processdate": {
+						"type": "string",
+						"defaultValue": "2024-07-18T15:51:43.464Z"
+					},
+					"objectname": {
+						"type": "string",
+						"defaultValue": "all"
+					},
+					"instance": {
+						"type": "string",
+						"defaultValue": "'scm'"
+					},
+					"project_id": {
+						"type": "string",
+						"defaultValue": "2100"
+					}
+				},
+				"variables": {
+					"configsqlqry": {
+						"type": "String",
+						"defaultValue": "SELECT em.parentid as parentcontrol_sk, ec.id, ec.objectname, ec.isincremental, istransactional, ec.eltcontrol_sk, ec.id as eltconfig_sk, ec.sourcesystem, cast(date_add(coalesce(lastsuccessfulrundate, startdate), - cast(ec.incrementalduration as int)) as date) as startdate, cast(coalesce(enddate, current_timestamp()) as date) as enddate, sourcesetting.datamodelname, sourcesetting.sap_checkpoint_key, sourcesetting.sap_cds_view_name, sourcesetting.sap_mount_point, sourcesetting.sap_cds_key_columns, sourcesetting.sourcelocation, sourcesetting.source_file_type, sourcesetting.databricksfolder, sourcesetting.raw_to_curated_notebook_path,sourcesetting.insertnotebookname, sourcesetting.updatenotebookname, sourcesetting.ddlnotebookname,  sourcesetting.raw_to_sapis_notebook_path ,sourcesetting.truncatenotebookname, sinksetting.targetlocation, sinksetting.load_type, sinksetting.target_file_type, sinksetting.rawtosapisfunction, sinksetting.sqltablename, sinksetting.rawtocuratedfunction, sinksetting.curatedtablename FROM conformed_catalog.audit.elt_control em inner join conformed_catalog.audit.elt_config ec  on em.id = ec.eltcontrol_sk inner join conformed_catalog.audit.elt_control ect on ect.id = ec.eltcontrol_sk where ec.isenabled = 1 and ect.pipelinename = '<pipelinename>' and ec.sourcesetting.instance in (<instance>) "
+					},
+					"execute_objects": {
+						"type": "Array"
+					}
+				},
+				"folder": {
+					"name": "Supply Chain Reporting"
+				},
+				"annotations": [],
+				"lastPublishTime": "2025-01-06T11:48:30Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/src_DeltaLake_Table_SCM')]",
+				"[concat(variables('factoryId'), '/pipelines/Child_S4_IngestToCurated_SupplyChain')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DestinationDataset_7ji')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureBlobStorage1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Binary",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"folderPath": "output",
+						"container": "datafactory"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureBlobStorage1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/SourceDataset_7ji')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureBlobStorage1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Binary",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "moviesDB2.csv",
+						"folderPath": "input",
+						"container": "datafactory"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureBlobStorage1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/src_DeltaLake_Table_SCM')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureDatabricksDeltaLake1",
+					"type": "LinkedServiceReference"
+				},
+				"folder": {
+					"name": "Supply Chain Reporting"
+				},
+				"annotations": [],
+				"type": "AzureDatabricksDeltaLakeDataset",
+				"typeProperties": {},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureDatabricksDeltaLake1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureBlobStorage1')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobStorage",
+				"typeProperties": {
+					"connectionString": "[parameters('AzureBlobStorage1_connectionString')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureDataLakeStorage1')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('AzureDataLakeStorage1_properties_typeProperties_url')]",
+					"accountKey": {
+						"type": "SecureString",
+						"value": "[parameters('AzureDataLakeStorage1_accountKey')]"
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureDatabricks1')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureDatabricks",
+				"typeProperties": {
+					"domain": "https://adb-4043224626899695.15.azuredatabricks.net",
+					"accessToken": {
+						"type": "SecureString",
+						"value": "[parameters('AzureDatabricks1_accessToken')]"
+					},
+					"existingClusterId": "[parameters('AzureDatabricks1_properties_typeProperties_existingClusterId')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureDatabricksDeltaLake1')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureDatabricksDeltaLake",
+				"typeProperties": {
+					"domain": "https://adb-4043224626899695.15.azuredatabricks.net",
+					"clusterId": "0217-085737-bljtoj77",
+					"accessToken": {
+						"type": "SecureString",
+						"value": "[parameters('AzureDatabricksDeltaLake1_accessToken')]"
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/SapOdp1')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "SapOdp",
+				"typeProperties": {
+					"clientId": "[parameters('SapOdp1_properties_typeProperties_clientId')]",
+					"sncMode": false,
+					"userName": "[parameters('SapOdp1_properties_typeProperties_userName')]",
+					"subscriberName": "AzurePVMOdpSubTest",
+					"password": {
+						"type": "SecureString",
+						"value": "[parameters('SapOdp1_password')]"
+					},
+					"server": "[parameters('SapOdp1_properties_typeProperties_server')]",
+					"systemNumber": "[parameters('SapOdp1_properties_typeProperties_systemNumber')]"
+				},
+				"connectVia": {
+					"referenceName": "integrationRuntime1",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/integrationRuntimes/integrationRuntime1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/integrationRuntime1')]",
+			"type": "Microsoft.DataFactory/factories/integrationRuntimes",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "SelfHosted",
+				"typeProperties": {}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DF_Peak_S4Hana_CDS_Extractor')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"folder": {
+					"name": "Peak FPA"
+				},
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"linkedService": {
+								"referenceName": "SapOdp1",
+								"type": "LinkedServiceReference"
+							},
+							"name": "S4HanaSource",
+							"description": "Dynamic source connector. Values extracted from json control table file"
+						}
+					],
+					"sinks": [
+						{
+							"linkedService": {
+								"referenceName": "AzureDataLakeStorage1",
+								"type": "LinkedServiceReference"
+							},
+							"name": "adlsSinkParquet"
+						}
+					],
+					"transformations": [],
+					"scriptLines": [
+						"parameters{",
+						"     sap_cds_view_name as string (\"\"),",
+						"     sap_mount_point as string (\"\"),",
+						"     sap_target_path as string (\"\"),",
+						"     sap_cds_key_columns as string[] ([\"\"])",
+						"}",
+						"source(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     store: 'SapOdp',",
+						"     format: 'sapObject',",
+						"     staged: true,",
+						"     context: 'ABAP_CDS',",
+						"     objectName: ($sap_cds_view_name),",
+						"     readMode: 'fullAndIncrementalLoad',",
+						"     keys: ($sap_cds_key_columns),",
+						"     fixDecimalPrecision: true) ~> S4HanaSource",
+						"S4HanaSource sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     format: 'parquet',",
+						"     fileSystem: ($sap_mount_point),",
+						"     folderPath: ($sap_target_path),",
+						"     compressionCodec: 'snappy',",
+						"     umask: 0022,",
+						"     preCommands: [],",
+						"     postCommands: [],",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> adlsSinkParquet"
+					]
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/SapOdp1')]",
+				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStorage1')]"
+			]
+		}
+	]
+}
