@@ -113,7 +113,7 @@
 										"type": "Expression"
 									},
 									"sap_cds_view_name": {
-										"value": "@concat(item().sap_cds_view_name,'$E')",
+										"value": "@concat(item().sap_cds_view_name,'$P')",
 										"type": "Expression"
 									},
 									"sap_cds_key_columns": {
