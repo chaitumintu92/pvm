@@ -1,0 +1,9 @@
+{
+	"name": "AARINIPVMAZURE2",
+	"location": "eastus",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "1b67e092-ba31-4ee0-9c32-9110bbc3e3f4",
+		"tenantId": "f6fc48f6-4986-40dc-968b-c109fae6e8f7"
+	}
+}
