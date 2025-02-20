@@ -1,0 +1,9 @@
+{
+	"name": "pvmadf1",
+	"location": "eastus",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "7b98bbba-7b17-4a38-85b6-a39b2334b03e",
+		"tenantId": "f6fc48f6-4986-40dc-968b-c109fae6e8f7"
+	}
+}
