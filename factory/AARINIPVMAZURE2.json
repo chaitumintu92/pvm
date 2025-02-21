@@ -1,5 +1,13 @@
 {
 	"name": "AARINIPVMAZURE2",
+	"properties": {
+		"globalParameters": {
+			"conformed_catalog": {
+				"type": "string",
+				"value": "uc_conformed_d"
+			}
+		}
+	},
 	"location": "eastus",
 	"identity": {
 		"type": "SystemAssigned",
