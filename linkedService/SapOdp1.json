@@ -11,10 +11,10 @@
 			"subscriberName": "AzurePVMOdpSubTest",
 			"server": "34.194.47.247",
 			"systemNumber": "00",
-			"encryptedCredential": "eyJDcmVkZW50aWFsSWQiOiI5OGQ2NmM5OC01MTA0LTQ4YjktYjY0NS00OGIxY2M4MjkwMDIiLCJWZXJzaW9uIjoiMi4wIiwiQ2xhc3NUeXBlIjoiTWljcm9zb2Z0LkRhdGFQcm94eS5Db3JlLkludGVyU2VydmljZURhdGFDb250cmFjdC5DcmVkZW50aWFsU1UwNkNZMTQifQ=="
+			"encryptedCredential": "eyJDcmVkZW50aWFsSWQiOiJiMGRkMTcwZC0yZDViLTRjMzUtOTYwYS1jNDdhZTczNDIzZTQiLCJWZXJzaW9uIjoiMi4wIiwiQ2xhc3NUeXBlIjoiTWljcm9zb2Z0LkRhdGFQcm94eS5Db3JlLkludGVyU2VydmljZURhdGFDb250cmFjdC5DcmVkZW50aWFsU1UwNkNZMTQifQ=="
 		},
 		"connectVia": {
-			"referenceName": "integrationRuntime2",
+			"referenceName": "integrationRuntime",
 			"type": "IntegrationRuntimeReference"
 		}
 	}
